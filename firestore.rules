@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Kategoriler ve ürünler herkese açık okunabilir (e-ticaret kataloğu)
+    match /categories/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /products/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    // Siparişler sadece yazılabilir (müşteri sipariş verir)
+    match /orders/{docId} {
+      allow read: if false;
+      allow create: if true;
+      allow update, delete: if false;
+    }
+  }
+}
