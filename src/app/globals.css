@@ -127,3 +127,18 @@
     @apply font-sans;
   }
 }
+
+@keyframes splash-gold-reveal {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+
+@layer utilities {
+  .animate-splash-gold-mask {
+    animation: splash-gold-reveal 1s ease-in-out 1s forwards;
+  }
+}

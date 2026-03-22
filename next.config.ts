@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: "cntoptan-1fe67.firebasestorage.app",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
     ],
   },
 };

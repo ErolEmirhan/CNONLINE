@@ -93,6 +93,7 @@ export function Navbar({
               alt="CN Toptan Gıda"
               width={36}
               height={36}
+              unoptimized
               className="shrink-0"
             />
             <span>CN Toptan Gıda</span>
@@ -118,6 +119,7 @@ export function Navbar({
             alt="CN Toptan Gıda"
             width={44}
             height={44}
+            unoptimized
             className="shrink-0 xl:h-12 xl:w-12"
           />
           <span>CN Toptan Gıda</span>

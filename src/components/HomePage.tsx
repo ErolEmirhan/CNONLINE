@@ -5,6 +5,7 @@ import { Navbar } from "./Navbar";
 import { SearchBar } from "./SearchBar";
 import { CategorySidebar } from "./CategorySidebar";
 import { HomeContent } from "./HomeContent";
+import { Hero } from "./Hero";
 
 export function HomePage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
@@ -24,6 +25,7 @@ export function HomePage() {
           onSelectCategory={setSelectedCategoryId}
         />
         <div className="flex min-w-0 flex-1 flex-col">
+          <Hero />
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <main className="min-w-0 flex-1">
             <HomeContent

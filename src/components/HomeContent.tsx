@@ -40,7 +40,10 @@ export function HomeContent({ selectedCategoryId, searchQuery }: HomeContentProp
 
   return (
     <>
-      <section className="w-full px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+      <section
+        id="urunler"
+        className="scroll-mt-20 w-full px-4 pt-6 pb-16 sm:scroll-mt-24 sm:px-6 sm:pt-8 lg:px-8"
+      >
         <motion.h2
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
