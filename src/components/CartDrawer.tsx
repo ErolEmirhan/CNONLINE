@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { ProductImage } from "./ProductImage";
 import { PriceBadge } from "./PriceBadge";
 import { ArrowRight, Minus, Plus, Trash2 } from "lucide-react";
@@ -13,15 +14,35 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/store/cart-store";
-import { cn } from "@/lib/utils";
+import { useStoreSettings } from "@/context/store-settings-context";
+import { useCampaigns } from "@/context/campaigns-context";
+import { calculateCartPricing } from "@/lib/campaign-pricing";
+import {
+  CartOrderThresholds,
+  cartMeetsMinimumOrder,
+} from "@/components/CartOrderThresholds";
 
 interface CartDrawerProps {
   trigger: React.ReactNode;
 }
 
 export function CartDrawer({ trigger }: CartDrawerProps) {
-  const { items, totalItems, totalPrice, updateQuantity, removeItem } =
+  const { items, totalItems, updateQuantity, removeItem } =
     useCart();
+  const { offersByProduct } = useCampaigns();
+  const { settings, isLoading: settingsLoading } = useStoreSettings();
+  const pricing = useMemo(
+    () => calculateCartPricing(items, offersByProduct),
+    [items, offersByProduct]
+  );
+  const lineByProductId = useMemo(
+    () => Object.fromEntries(pricing.lines.map((l) => [l.productId, l])),
+    [pricing.lines]
+  );
+  const canCheckout = cartMeetsMinimumOrder(
+    pricing.totalPrice,
+    settings.minimumCartTotal
+  );
 
   return (
     <Drawer direction="right">
@@ -63,7 +84,20 @@ export function CartDrawer({ trigger }: CartDrawerProps) {
                       <p className="truncate font-medium text-neutral-900">
                         {item.product.name}
                       </p>
-                      <PriceBadge price={item.product.price} size="sm" />
+                      <PriceBadge
+                        price={lineByProductId[item.product.id]?.unitPrice ?? item.product.price}
+                        size="sm"
+                      />
+                      {(lineByProductId[item.product.id]?.offer &&
+                        (lineByProductId[item.product.id]?.baseUnitPrice ?? 0) >
+                          (lineByProductId[item.product.id]?.unitPrice ?? 0)) ? (
+                        <p className="mt-1 text-xs text-emerald-700">
+                          Kampanya: {lineByProductId[item.product.id]?.offer?.minQuantity}+ adette{" "}
+                          <span className="font-semibold">
+                            ₺{(lineByProductId[item.product.id]?.unitPrice ?? 0).toLocaleString("tr-TR")}
+                          </span>
+                        </p>
+                      ) : null}
                       <div className="mt-2 flex items-center gap-2">
                         <div className="flex items-center rounded-lg border border-neutral-200 bg-white">
                           <Button
@@ -111,19 +145,41 @@ export function CartDrawer({ trigger }: CartDrawerProps) {
 
           {items.length > 0 && (
             <div className="border-t p-4">
+              <CartOrderThresholds
+                totalPrice={pricing.totalPrice}
+                settings={settings}
+                isLoading={settingsLoading}
+                className="mb-4"
+              />
               <div className="mb-4 flex items-center justify-between gap-3">
                 <span className="text-lg font-semibold text-neutral-900">Toplam</span>
-                <PriceBadge price={totalPrice} size="md" />
+                <PriceBadge price={pricing.totalPrice} size="md" />
               </div>
-              <Link href="/checkout" className="block">
+              {pricing.totalDiscount > 0 ? (
+                <p className="mb-3 text-right text-xs font-medium text-emerald-700">
+                  Kampanya indirimi: -₺{pricing.totalDiscount.toLocaleString("tr-TR")}
+                </p>
+              ) : null}
+              {canCheckout ? (
+                <Link href="/checkout" className="block">
+                  <Button
+                    size="lg"
+                    className="group w-full gap-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 px-6 py-6 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:from-indigo-600 hover:via-violet-600 hover:to-purple-700 hover:shadow-violet-500/30 focus-visible:ring-violet-400/50"
+                  >
+                    <span>Siparişi Tamamla</span>
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+                  </Button>
+                </Link>
+              ) : (
                 <Button
                   size="lg"
-                  className="group w-full gap-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 px-6 py-6 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:from-indigo-600 hover:via-violet-600 hover:to-purple-700 hover:shadow-violet-500/30 focus-visible:ring-violet-400/50"
+                  disabled
+                  className="w-full cursor-not-allowed rounded-xl px-6 py-6 text-base font-semibold opacity-80"
+                  variant="secondary"
                 >
-                  <span>Siparişi Tamamla</span>
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+                  <span>Minimum tutarı tamamlayın</span>
                 </Button>
-              </Link>
+              )}
             </div>
           )}
         </div>

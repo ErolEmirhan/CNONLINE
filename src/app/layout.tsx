@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { SplashScreen } from "@/components/SplashScreen";
-import { CartProvider } from "@/store/cart-store";
+import { Providers } from "@/components/Providers";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -26,7 +26,7 @@ export default function RootLayout({
         className={`${plusJakarta.variable} font-sans antialiased`}
       >
         <SplashScreen />
-        <CartProvider>{children}</CartProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

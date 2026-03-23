@@ -3,10 +3,17 @@
 import { cn } from "@/lib/utils";
 
 interface PriceBadgeProps {
-  price: number;
+  price: number | undefined | null;
   className?: string;
   /** sm: kartlar, md: detay/modal, lg: vurgu alanları */
   size?: "sm" | "md" | "lg";
+}
+
+function formatTry(value: number | undefined | null): string {
+  if (value === undefined || value === null) return "—";
+  const n = typeof value === "number" && !Number.isNaN(value) ? value : Number(value);
+  if (!Number.isFinite(n)) return "—";
+  return n.toLocaleString("tr-TR");
 }
 
 const sizeStyles = {
@@ -16,6 +23,9 @@ const sizeStyles = {
 };
 
 export function PriceBadge({ price, className, size = "sm" }: PriceBadgeProps) {
+  const formatted = formatTry(price);
+  const hasPrice = formatted !== "—";
+
   return (
     <span
       className={cn(
@@ -29,7 +39,7 @@ export function PriceBadge({ price, className, size = "sm" }: PriceBadgeProps) {
         boxShadow: "0 4px 14px rgba(52, 211, 153, 0.3)",
       }}
     >
-      ₺{price.toLocaleString("tr-TR")}
+      {hasPrice ? `₺${formatted}` : formatted}
     </span>
   );
 }

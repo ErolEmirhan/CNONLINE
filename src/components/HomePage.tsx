@@ -3,37 +3,51 @@
 import { useState } from "react";
 import { Navbar } from "./Navbar";
 import { SearchBar } from "./SearchBar";
-import { CategorySidebar } from "./CategorySidebar";
+import { CategoryChips } from "./CategoryChips";
 import { HomeContent } from "./HomeContent";
 import { Hero } from "./Hero";
+import type { HomeFilter } from "@/types/home-filter";
 
 export function HomePage() {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
-  );
+  const [homeFilter, setHomeFilter] = useState<HomeFilter>({ mode: "explore" });
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSeeAllCategory = (categoryId: string) => {
+    setSearchQuery("");
+    setHomeFilter({ mode: "category-grid", id: categoryId });
+    requestAnimationFrame(() => {
+      document.getElementById("urunler")?.scrollIntoView({ behavior: "smooth" });
+    });
+  };
+
+  const handleShowAllProducts = () => {
+    setSearchQuery("");
+    setHomeFilter({ mode: "all" });
+  };
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar
-        selectedCategoryId={selectedCategoryId}
-        onSelectCategory={setSelectedCategoryId}
-      />
-      <div className="flex pt-14 sm:pt-16">
-        <CategorySidebar
-          selectedCategoryId={selectedCategoryId}
-          onSelectCategory={setSelectedCategoryId}
-        />
-        <div className="flex min-w-0 flex-1 flex-col">
+      <Navbar homeFilter={homeFilter} onHomeFilterChange={setHomeFilter} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="shrink-0">
           <Hero />
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
-          <main className="min-w-0 flex-1">
-            <HomeContent
-              selectedCategoryId={selectedCategoryId}
-              searchQuery={searchQuery}
-            />
-          </main>
         </div>
+        {/* Arama + kategori şeridi: kayınca üstte sabit kalsın */}
+        <div className="sticky top-14 z-30 w-full shrink-0 border-b border-neutral-100 bg-white/95 backdrop-blur-md sm:top-16">
+          <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          <CategoryChips
+            homeFilter={homeFilter}
+            onHomeFilterChange={setHomeFilter}
+          />
+        </div>
+        <main className="min-w-0 flex-1">
+          <HomeContent
+            homeFilter={homeFilter}
+            searchQuery={searchQuery}
+            onSeeAllCategory={handleSeeAllCategory}
+            onShowAllProducts={handleShowAllProducts}
+          />
+        </main>
       </div>
     </div>
   );

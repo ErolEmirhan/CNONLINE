@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +8,6 @@ const TOTAL_MS = 2500;
 const FADE_START_MS = 2200;
 
 export function SplashScreen() {
-  const pathname = usePathname();
   const [show, setShow] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
 
@@ -29,7 +27,7 @@ export function SplashScreen() {
       window.clearTimeout(hideTimer);
       document.body.style.overflow = "";
     };
-  }, [pathname]);
+  }, []);
 
   if (!show) return null;
 
@@ -41,10 +39,7 @@ export function SplashScreen() {
       )}
       aria-hidden
     >
-      <div
-        key={pathname}
-        className="flex flex-col items-center"
-      >
+      <div className="flex flex-col items-center">
         {/* Tek katman: orijinal logo — altın filtre / clip-path kutu oluşturmaz */}
         <Image
           src="/logo.png"

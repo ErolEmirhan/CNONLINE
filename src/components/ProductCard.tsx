@@ -81,31 +81,31 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               <div
                 role="group"
                 aria-label="Sepet miktarı"
-                className="flex shrink-0 items-center gap-0.5 rounded-[10px] border border-neutral-200 bg-white p-1 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:gap-0.5 sm:rounded-lg sm:p-0.5 sm:shadow-none"
+                className="flex shrink-0 items-stretch overflow-hidden rounded-md border border-neutral-200/90 bg-neutral-50/60 sm:gap-0.5 sm:rounded-lg sm:border-neutral-200 sm:bg-white sm:p-0.5 sm:shadow-sm"
                 onClick={stopCardNav}
               >
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-sm"
-                  className="size-9 min-h-9 min-w-9 rounded-lg text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 sm:size-7 sm:min-h-0 sm:min-w-0 sm:rounded-md"
+                  size="icon-xs"
+                  className="h-8 min-h-8 min-w-8 rounded-none px-0 text-neutral-600 hover:bg-neutral-200/50 hover:text-neutral-900 sm:h-7 sm:min-h-0 sm:min-w-0 sm:rounded-md sm:hover:bg-neutral-100"
                   onClick={handleDecrement}
                   aria-label="Azalt"
                 >
-                  <Minus className="size-4 sm:size-3.5" strokeWidth={2.5} />
+                  <Minus className="size-3.5" strokeWidth={2} />
                 </Button>
-                <span className="min-w-[1.75rem] select-none px-0.5 text-center text-[13px] font-semibold tabular-nums leading-none text-neutral-900 sm:min-w-[1.5rem] sm:px-0 sm:text-xs">
+                <span className="flex min-w-[1.5rem] select-none items-center justify-center px-0.5 text-center text-xs font-semibold tabular-nums text-neutral-800 sm:min-w-[1.5rem] sm:text-xs">
                   {qty}
                 </span>
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-sm"
-                  className="size-9 min-h-9 min-w-9 rounded-lg text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 sm:size-7 sm:min-h-0 sm:min-w-0 sm:rounded-md"
+                  size="icon-xs"
+                  className="h-8 min-h-8 min-w-8 rounded-none px-0 text-neutral-600 hover:bg-neutral-200/50 hover:text-neutral-900 sm:h-7 sm:min-h-0 sm:min-w-0 sm:rounded-md sm:hover:bg-neutral-100"
                   onClick={handleIncrement}
                   aria-label="Artır"
                 >
-                  <Plus className="size-4 sm:size-3.5" strokeWidth={2.5} />
+                  <Plus className="size-3.5" strokeWidth={2} />
                 </Button>
               </div>
             ) : (
@@ -114,13 +114,13 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 onClick={handleAddToCart}
                 variant="outline"
                 size="sm"
-                className="h-10 shrink-0 gap-2 rounded-[10px] border-neutral-200 bg-white px-3.5 text-xs font-semibold tracking-tight text-neutral-800 shadow-[0_1px_2px_rgba(0,0,0,0.05)] sm:h-7 sm:gap-1.5 sm:rounded-lg sm:px-2.5 sm:text-[0.8rem] sm:font-medium sm:shadow-none"
+                className="h-8 max-w-full shrink-0 rounded-md border-neutral-200/90 bg-neutral-50/40 px-2 text-[11px] font-medium leading-none tracking-tight text-neutral-700 shadow-none hover:bg-neutral-100/80 sm:h-7 sm:max-w-none sm:gap-1.5 sm:rounded-lg sm:border-neutral-200 sm:bg-background sm:px-2.5 sm:text-[0.8rem] sm:shadow-sm"
               >
                 <ShoppingCart
-                  className="size-4 shrink-0 sm:size-3.5"
+                  className="hidden size-3.5 shrink-0 sm:inline"
                   strokeWidth={2}
                 />
-                <span className="leading-tight">Sepete Ekle</span>
+                <span className="truncate">Sepete Ekle</span>
               </Button>
             )}
           </div>

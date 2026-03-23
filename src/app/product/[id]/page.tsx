@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 import { ProductImage } from "@/components/ProductImage";
 import { PriceBadge } from "@/components/PriceBadge";
@@ -120,9 +121,12 @@ export default function ProductPage() {
                 <Button
                   onClick={handleAddToCart}
                   size="lg"
-                  className="group w-full gap-3 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 px-8 py-6 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:from-indigo-600 hover:via-violet-600 hover:to-purple-700 hover:shadow-violet-500/30 focus-visible:ring-violet-400/50 sm:w-auto sm:min-w-[240px]"
+                  variant="outline"
+                  className={cn(
+                    "group h-10 w-full gap-2 rounded-lg border-neutral-200/90 bg-neutral-50/50 text-sm font-medium text-neutral-800 shadow-none hover:bg-neutral-100/90 sm:h-auto sm:min-h-11 sm:min-w-[240px] sm:w-auto sm:gap-3 sm:rounded-xl sm:border-transparent sm:bg-gradient-to-r sm:from-indigo-500 sm:via-violet-500 sm:to-purple-600 sm:px-8 sm:py-6 sm:text-base sm:font-semibold sm:text-white sm:shadow-lg sm:shadow-violet-500/25 sm:hover:from-indigo-600 sm:hover:via-violet-600 sm:hover:to-purple-700 sm:hover:shadow-violet-500/30 sm:focus-visible:ring-violet-400/50"
+                  )}
                 >
-                  <ShoppingCart className="h-5 w-5 transition-transform group-hover:scale-110" />
+                  <ShoppingCart className="size-4 shrink-0 sm:h-5 sm:w-5 sm:transition-transform sm:group-hover:scale-110" />
                   <span>Sepete Ekle</span>
                 </Button>
               </div>

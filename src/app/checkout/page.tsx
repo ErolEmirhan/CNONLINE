@@ -3,20 +3,51 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Loader2, Upload } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  Copy,
+  Loader2,
+  Upload,
+} from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/store/cart-store";
+import { useStoreSettings } from "@/context/store-settings-context";
+import { useCampaigns } from "@/context/campaigns-context";
+import {
+  CartOrderThresholds,
+  cartMeetsMinimumOrder,
+} from "@/components/CartOrderThresholds";
+import { formatTryWhole } from "@/lib/store-settings-doc";
+import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import type { Order, OrderItem } from "@/types";
+import { calculateCartPricing } from "@/lib/campaign-pricing";
 
-const IBAN = "TR00 0000 0000 0000 0000 0000 00";
+const IBAN_DISPLAY = "TR05 0006 2000 7900 0006 2907 20";
+/** Boşluksuz — havale formlarına yapıştırmak için */
+const IBAN_COPY = "TR050006200079000006290720";
+const COMPANY_LEGAL_NAME =
+  "CN Toptan Gıda Temizlik Ambalaj Sanayi Ticaret LTD.ŞTİ";
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, clearCart } = useCart();
+  const { offersByProduct } = useCampaigns();
+  const pricing = calculateCartPricing(items, offersByProduct);
+  const totalPrice = pricing.totalPrice;
+  const lineByProductId = Object.fromEntries(
+    pricing.lines.map((l) => [l.productId, l])
+  );
+  const { settings, isLoading: settingsLoading } = useStoreSettings();
+  const meetsMinimum = cartMeetsMinimumOrder(
+    totalPrice,
+    settings.minimumCartTotal
+  );
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +57,24 @@ export default function CheckoutPage() {
     phone: "",
     email: "",
     address: "",
+    taxIdOrTckn: "",
   });
 
   const [receiptBase64, setReceiptBase64] = useState<string>("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [ibanCopied, setIbanCopied] = useState(false);
+  const [ibanCopyFailed, setIbanCopyFailed] = useState(false);
+
+  const copyIban = async () => {
+    try {
+      await navigator.clipboard.writeText(IBAN_COPY);
+      setIbanCopyFailed(false);
+      setIbanCopied(true);
+      window.setTimeout(() => setIbanCopied(false), 2200);
+    } catch {
+      setIbanCopyFailed(true);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -75,12 +120,28 @@ export default function CheckoutPage() {
   };
 
   const handleStep2 = () => {
-    if (validateStep1()) setStep(2);
+    if (!validateStep1()) return;
+    if (
+      !cartMeetsMinimumOrder(totalPrice, settings.minimumCartTotal)
+    ) {
+      setError(
+        `Sipariş için sepet tutarı en az ${formatTryWhole(settings.minimumCartTotal)} olmalı. Sepetinize ürün ekleyin.`
+      );
+      return;
+    }
+    setError(null);
+    setStep(2);
   };
 
   const handleSubmit = async () => {
     if (!receiptBase64) {
       setError("Lütfen ödeme dekontunu yükleyin.");
+      return;
+    }
+    if (!cartMeetsMinimumOrder(totalPrice, settings.minimumCartTotal)) {
+      setError(
+        `Sepet tutarı güncel minimumun (${formatTryWhole(settings.minimumCartTotal)}) altında. Sepeti güncelleyip tekrar deneyin.`
+      );
       return;
     }
 
@@ -91,16 +152,18 @@ export default function CheckoutPage() {
       const orderItems: OrderItem[] = items.map((item) => ({
         productId: item.product.id,
         productName: item.product.name,
-        price: item.product.price,
+        price: lineByProductId[item.product.id]?.unitPrice ?? item.product.price,
         quantity: item.quantity,
         image: item.product.image,
       }));
 
+      const trimmedTax = form.taxIdOrTckn.trim();
       const orderData: Omit<Order, "id"> = {
         customerName: form.customerName,
         phone: form.phone,
         email: form.email,
         address: form.address,
+        ...(trimmedTax ? { taxIdOrTckn: trimmedTax } : {}),
         items: orderItems,
         totalPrice,
         receiptBase64,
@@ -162,6 +225,15 @@ export default function CheckoutPage() {
           <ArrowLeft className="h-4 w-4" />
           Alışverişe Dön
         </Link>
+
+        {(step === 1 || step === 2) && items.length > 0 && (
+          <CartOrderThresholds
+            totalPrice={totalPrice}
+            settings={settings}
+            isLoading={settingsLoading}
+            className="mb-6"
+          />
+        )}
 
         <AnimatePresence mode="wait">
           {step === 1 && (
@@ -232,7 +304,11 @@ export default function CheckoutPage() {
 
               <Button
                 onClick={handleStep2}
-                disabled={!validateStep1()}
+                disabled={
+                  !validateStep1() ||
+                  settingsLoading ||
+                  !meetsMinimum
+                }
                 className="mt-8 w-full"
                 size="lg"
               >
@@ -257,16 +333,84 @@ export default function CheckoutPage() {
                 Havale/EFT ile ödeme yapın ve dekontu yükleyin.
               </p>
 
-              <div className="mt-8 rounded-xl border border-neutral-200 bg-neutral-50 p-6">
-                <p className="text-sm font-medium text-neutral-600">
+              <div className="mt-8 rounded-xl border border-neutral-200 bg-gradient-to-br from-neutral-50 to-violet-50/40 p-6 shadow-sm ring-1 ring-violet-100/60">
+                <p className="text-sm font-semibold tracking-wide text-neutral-700">
                   Banka Havalesi / EFT
                 </p>
-                <p className="mt-2 font-mono text-lg font-semibold text-neutral-900">
-                  IBAN: {IBAN}
+                <p className="mt-2 text-sm font-medium leading-snug text-neutral-600">
+                  {COMPANY_LEGAL_NAME}
                 </p>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4">
+                  <div className="min-w-0 flex-1 rounded-xl border border-neutral-200/80 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+                      IBAN
+                    </p>
+                    <p className="mt-1.5 break-all font-mono text-base font-semibold tracking-tight text-neutral-900 sm:text-lg">
+                      {IBAN_DISPLAY}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={copyIban}
+                    className={cn(
+                      "h-auto shrink-0 gap-2 rounded-xl border-2 px-5 py-3.5 font-semibold shadow-sm transition-all sm:self-center",
+                      ibanCopied
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-50"
+                        : "border-violet-200 bg-white text-violet-700 hover:border-violet-300 hover:bg-violet-50"
+                    )}
+                  >
+                    {ibanCopied ? (
+                      <>
+                        <Check className="h-4 w-4 shrink-0" />
+                        Kopyalandı
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 shrink-0" />
+                        IBAN&apos;ı Kopyala
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {ibanCopyFailed && (
+                  <p className="mt-2 text-xs text-red-600">
+                    IBAN kopyalanamadı. Tarayıcı pano iznini kontrol edin veya
+                    manuel girin.
+                  </p>
+                )}
                 <p className="mt-4 text-sm text-neutral-500">
                   Toplam: ₺{totalPrice.toLocaleString("tr-TR")}
                 </p>
+                {pricing.totalDiscount > 0 ? (
+                  <p className="mt-1 text-sm font-medium text-emerald-700">
+                    Kampanya indirimi: -₺{pricing.totalDiscount.toLocaleString("tr-TR")}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="mt-6 rounded-xl border border-dashed border-neutral-200 bg-white/60 px-4 py-5 sm:px-5">
+                <Label
+                  htmlFor="taxIdOrTckn"
+                  className="text-sm font-medium text-neutral-800"
+                >
+                  Vergi numarası veya TC Kimlik No{" "}
+                  <span className="font-normal text-neutral-500">(opsiyonel)</span>
+                </Label>
+                <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">
+                  Fatura keserken kullanırız; KDV indirimi gibi durumlarda not
+                  düşmek için de işinize yarayabilir.
+                </p>
+                <Input
+                  id="taxIdOrTckn"
+                  name="taxIdOrTckn"
+                  value={form.taxIdOrTckn}
+                  onChange={handleInputChange}
+                  placeholder="10 haneli VKN veya 11 haneli TCKN"
+                  className="mt-3"
+                  maxLength={32}
+                  autoComplete="off"
+                />
               </div>
 
               <div className="mt-8">
@@ -304,7 +448,7 @@ export default function CheckoutPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={!receiptBase64 || loading}
+                  disabled={!receiptBase64 || loading || !meetsMinimum}
                   size="lg"
                   className="group flex-1 gap-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 px-6 py-6 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:from-indigo-600 hover:via-violet-600 hover:to-purple-700 hover:shadow-violet-500/30 focus-visible:ring-violet-400/50 disabled:opacity-70"
                 >

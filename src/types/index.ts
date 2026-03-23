@@ -21,6 +21,12 @@ export interface CartItem {
   quantity: number;
 }
 
+/** Firestore `settings` belgesi (minimumCartTotal, freeShippingMinimumCart) */
+export interface StoreSettings {
+  minimumCartTotal: number;
+  freeShippingMinimumCart: number;
+}
+
 export interface OrderItem {
   productId: string;
   productName: string;
@@ -35,6 +41,8 @@ export interface Order {
   phone: string;
   email: string;
   address: string;
+  /** Opsiyonel: fatura / KDV indirimi vb. için vergi no veya TCKN */
+  taxIdOrTckn?: string;
   items: OrderItem[];
   totalPrice: number;
   receiptBase64: string;
